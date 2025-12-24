@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0a0a0a">
     <title>TimeLog</title>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&display=swap');
@@ -24,9 +24,10 @@
             --border: #2a2a2a;
             --text: #e0e0e0;
             --text-dim: #666;
-            --accent: #00d4aa;
-            --accent-glow: rgba(0, 212, 170, 0.15);
-            --danger: #ff6b6b;
+            --accent-killing: #ff6b6b;
+            --accent-killing-glow: rgba(255, 107, 107, 0.15);
+            --accent-work: #00d4aa;
+            --accent-work-glow: rgba(0, 212, 170, 0.15);
         }
 
         html, body {
@@ -48,11 +49,11 @@
 
         .container {
             width: 100%;
-            max-width: 360px;
+            max-width: 400px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 48px;
+            gap: 24px;
         }
 
         .date {
@@ -63,15 +64,158 @@
             text-transform: uppercase;
         }
 
+        /* Weekly Log Styles */
+        .weekly-log {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .weekly-header {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 4px;
+        }
+
+        .weekly-legend {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 9px;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        .legend-dot.killing {
+            background: var(--accent-killing);
+        }
+
+        .legend-dot.work {
+            background: var(--accent-work);
+        }
+
+        .weekly-chart {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            height: 100px;
+            padding: 0 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .day-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .day-bars {
+            display: flex;
+            gap: 3px;
+            align-items: flex-end;
+            height: 80px;
+        }
+
+        .bar {
+            width: 12px;
+            border-radius: 2px 2px 0 0;
+            transition: height 0.3s ease;
+        }
+
+        .bar.killing {
+            background: var(--accent-killing);
+        }
+
+        .bar.work {
+            background: var(--accent-work);
+        }
+
+        .bar.empty {
+            background: var(--border);
+            height: 2px !important;
+        }
+
+        .day-label {
+            font-size: 9px;
+            color: var(--text-dim);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .day-label.today {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .weekly-hours {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 4px;
+            margin-top: 4px;
+        }
+
+        .day-hours {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            font-size: 8px;
+            color: var(--text-dim);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .day-hours .killing-hr {
+            color: var(--accent-killing);
+        }
+
+        .day-hours .work-hr {
+            color: var(--accent-work);
+        }
+
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        }
+
+        .timers-container {
+            display: flex;
+            gap: 24px;
+            width: 100%;
+            justify-content: center;
+        }
+
         .timer-section {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 40px;
+            gap: 16px;
+            flex: 1;
+            max-width: 160px;
+        }
+
+        .timer-label {
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--text-dim);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
         }
 
         .current-time {
-            font-size: 48px;
+            font-size: 24px;
             font-weight: 300;
             letter-spacing: 0.05em;
             color: var(--text);
@@ -79,21 +223,25 @@
             transition: color 0.3s ease;
         }
 
-        .current-time.running {
-            color: var(--accent);
+        .current-time.running-killing {
+            color: var(--accent-killing);
+        }
+
+        .current-time.running-work {
+            color: var(--accent-work);
         }
 
         .toggle-btn {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             border: 2px solid var(--border);
             background: var(--surface);
             color: var(--text);
             font-family: inherit;
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 400;
-            letter-spacing: 0.15em;
+            letter-spacing: 0.1em;
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -105,13 +253,25 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: var(--accent-glow);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
 
-        .toggle-btn:hover {
-            border-color: var(--accent);
+        .toggle-btn.killing::before {
+            background: var(--accent-killing-glow);
+        }
+
+        .toggle-btn.work::before {
+            background: var(--accent-work-glow);
+        }
+
+        .toggle-btn.killing:hover {
+            border-color: var(--accent-killing);
+            transform: scale(1.02);
+        }
+
+        .toggle-btn.work:hover {
+            border-color: var(--accent-work);
             transform: scale(1.02);
         }
 
@@ -123,9 +283,14 @@
             transform: scale(0.98);
         }
 
-        .toggle-btn.running {
-            border-color: var(--accent);
-            box-shadow: 0 0 40px var(--accent-glow);
+        .toggle-btn.running.killing {
+            border-color: var(--accent-killing);
+            box-shadow: 0 0 40px var(--accent-killing-glow);
+        }
+
+        .toggle-btn.running.work {
+            border-color: var(--accent-work);
+            box-shadow: 0 0 40px var(--accent-work-glow);
         }
 
         .toggle-btn.running::before {
@@ -138,21 +303,37 @@
             50% { opacity: 0.6; }
         }
 
-        .divider {
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        .total-time {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
         }
 
-        .total-section {
+        .total-time.killing {
+            color: var(--accent-killing);
+        }
+
+        .total-time.work {
+            color: var(--accent-work);
+        }
+
+        .session-count {
+            font-size: 10px;
+            color: var(--text-dim);
+            height: 14px;
+        }
+
+        .summary-section {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             width: 100%;
         }
 
-        .total-label {
+        .summary-label {
             font-size: 11px;
             font-weight: 400;
             color: var(--text-dim);
@@ -160,8 +341,8 @@
             text-transform: uppercase;
         }
 
-        .total-time {
-            font-size: 32px;
+        .summary-time {
+            font-size: 28px;
             font-weight: 600;
             letter-spacing: 0.05em;
             color: var(--text);
@@ -184,50 +365,101 @@
         }
 
         .reset-btn:hover {
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-
-        .session-count {
-            font-size: 11px;
-            color: var(--text-dim);
-            margin-top: 4px;
+            border-color: var(--accent-killing);
+            color: var(--accent-killing);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="date" id="currentDate"></div>
+
+        <!-- Weekly Log -->
+        <div class="weekly-log">
+            <div class="weekly-header">
+                <div class="weekly-legend">
+                    <div class="legend-dot killing"></div>
+                    <span>Killing</span>
+                </div>
+                <div class="weekly-legend">
+                    <div class="legend-dot work"></div>
+                    <span>Work</span>
+                </div>
+            </div>
+            <div class="weekly-chart" id="weeklyChart"></div>
+            <div class="weekly-hours" id="weeklyHours"></div>
+        </div>
+
+        <div class="divider"></div>
         
-        <div class="timer-section">
-            <div class="current-time" id="currentTime">00:00:00</div>
-            <button class="toggle-btn" id="toggleBtn">Start</button>
+        <div class="timers-container">
+            <div class="timer-section">
+                <div class="timer-label">Killing Time</div>
+                <div class="current-time" id="currentTimeKilling">00:00:00</div>
+                <button class="toggle-btn killing" id="toggleBtnKilling">Start</button>
+                <div class="total-time killing" id="totalTimeKilling">00:00:00</div>
+                <div class="session-count" id="sessionCountKilling"></div>
+            </div>
+
+            <div class="timer-section">
+                <div class="timer-label">Work</div>
+                <div class="current-time" id="currentTimeWork">00:00:00</div>
+                <button class="toggle-btn work" id="toggleBtnWork">Start</button>
+                <div class="total-time work" id="totalTimeWork">00:00:00</div>
+                <div class="session-count" id="sessionCountWork"></div>
+            </div>
         </div>
 
         <div class="divider"></div>
 
-        <div class="total-section">
-            <div class="total-label">Total Today</div>
-            <div class="total-time" id="totalTime">00:00:00</div>
-            <div class="session-count" id="sessionCount"></div>
-            <button class="reset-btn" id="resetBtn">Reset</button>
+        <div class="summary-section">
+            <div class="summary-label">Total Today</div>
+            <div class="summary-time" id="summaryTime">00:00:00</div>
+            <button class="reset-btn" id="resetBtn">Reset All</button>
         </div>
     </div>
 
     <script>
-        const STORAGE_KEY = 'timelog_data';
+        const STORAGE_KEY = 'timelog_data_v2';
+        const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const MAX_HOURS = 12;
+        const BAR_MAX_HEIGHT = 80;
         
-        let isRunning = false;
-        let startTime = null;
-        let currentSessionElapsed = 0;
-        let timerInterval = null;
+        const timers = {
+            killing: {
+                isRunning: false,
+                startTime: null,
+                currentSessionElapsed: 0,
+                interval: null
+            },
+            work: {
+                isRunning: false,
+                startTime: null,
+                currentSessionElapsed: 0,
+                interval: null
+            }
+        };
 
-        const currentTimeEl = document.getElementById('currentTime');
-        const totalTimeEl = document.getElementById('totalTime');
-        const toggleBtn = document.getElementById('toggleBtn');
-        const resetBtn = document.getElementById('resetBtn');
+        const elements = {
+            killing: {
+                currentTime: document.getElementById('currentTimeKilling'),
+                totalTime: document.getElementById('totalTimeKilling'),
+                toggleBtn: document.getElementById('toggleBtnKilling'),
+                sessionCount: document.getElementById('sessionCountKilling')
+            },
+            work: {
+                currentTime: document.getElementById('currentTimeWork'),
+                totalTime: document.getElementById('totalTimeWork'),
+                toggleBtn: document.getElementById('toggleBtnWork'),
+                sessionCount: document.getElementById('sessionCountWork')
+            }
+        };
+
         const currentDateEl = document.getElementById('currentDate');
-        const sessionCountEl = document.getElementById('sessionCount');
+        const summaryTimeEl = document.getElementById('summaryTime');
+        const resetBtn = document.getElementById('resetBtn');
+        const weeklyChartEl = document.getElementById('weeklyChart');
+        const weeklyHoursEl = document.getElementById('weeklyHours');
 
         function formatTime(ms) {
             const totalSeconds = Math.floor(ms / 1000);
@@ -237,9 +469,17 @@
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
 
+        function formatHours(ms) {
+            const hours = ms / (1000 * 60 * 60);
+            return hours.toFixed(1) + 'h';
+        }
+
+        function getDateKey(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
         function getTodayKey() {
-            const now = new Date();
-            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            return getDateKey(new Date());
         }
 
         function formatDisplayDate() {
@@ -248,12 +488,35 @@
             return now.toLocaleDateString('ja-JP', options);
         }
 
+        function getWeekDates() {
+            const today = new Date();
+            const todayDay = today.getDay(); // 0 = Sunday
+            const dates = [];
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - todayDay + i);
+                dates.push({
+                    date: date,
+                    key: getDateKey(date),
+                    dayName: DAY_NAMES[i],
+                    isToday: i === todayDay,
+                    isFuture: i > todayDay
+                });
+            }
+            
+            return dates;
+        }
+
         function loadData() {
             const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
             const todayKey = getTodayKey();
             
             if (!data[todayKey]) {
-                data[todayKey] = { totalMs: 0, sessions: 0 };
+                data[todayKey] = {
+                    killing: { totalMs: 0, sessions: 0 },
+                    work: { totalMs: 0, sessions: 0 }
+                };
             }
             
             return data;
@@ -268,104 +531,233 @@
             return data[getTodayKey()];
         }
 
-        function updateTodayData(totalMs, sessions) {
+        function updateTodayData(type, totalMs, sessions) {
             const data = loadData();
             const todayKey = getTodayKey();
-            data[todayKey] = { totalMs, sessions };
+            if (!data[todayKey]) {
+                data[todayKey] = {
+                    killing: { totalMs: 0, sessions: 0 },
+                    work: { totalMs: 0, sessions: 0 }
+                };
+            }
+            data[todayKey][type] = { totalMs, sessions };
             saveData(data);
         }
 
-        function updateDisplay() {
+        function renderWeeklyChart() {
+            const data = loadData();
+            const weekDates = getWeekDates();
+            const todayKey = getTodayKey();
+            
+            let chartHTML = '';
+            let hoursHTML = '';
+            
+            weekDates.forEach(day => {
+                const dayData = data[day.key] || { killing: { totalMs: 0 }, work: { totalMs: 0 } };
+                
+                let killingMs = dayData.killing.totalMs || 0;
+                let workMs = dayData.work.totalMs || 0;
+                
+                // Add current session if running and it's today
+                if (day.isToday) {
+                    if (timers.killing.isRunning) {
+                        killingMs += timers.killing.currentSessionElapsed;
+                    }
+                    if (timers.work.isRunning) {
+                        workMs += timers.work.currentSessionElapsed;
+                    }
+                }
+                
+                const killingHours = killingMs / (1000 * 60 * 60);
+                const workHours = workMs / (1000 * 60 * 60);
+                
+                const killingHeight = Math.min((killingHours / MAX_HOURS) * BAR_MAX_HEIGHT, BAR_MAX_HEIGHT);
+                const workHeight = Math.min((workHours / MAX_HOURS) * BAR_MAX_HEIGHT, BAR_MAX_HEIGHT);
+                
+                const labelClass = day.isToday ? 'day-label today' : 'day-label';
+                
+                if (day.isFuture) {
+                    chartHTML += `
+                        <div class="day-column">
+                            <div class="day-bars">
+                                <div class="bar empty"></div>
+                                <div class="bar empty"></div>
+                            </div>
+                            <div class="${labelClass}">${day.dayName}</div>
+                        </div>
+                    `;
+                    hoursHTML += `
+                        <div class="day-hours">
+                            <span class="killing-hr">-</span>
+                            <span class="work-hr">-</span>
+                        </div>
+                    `;
+                } else {
+                    chartHTML += `
+                        <div class="day-column">
+                            <div class="day-bars">
+                                <div class="bar killing" style="height: ${killingHeight > 0 ? killingHeight : 2}px;"></div>
+                                <div class="bar work" style="height: ${workHeight > 0 ? workHeight : 2}px;"></div>
+                            </div>
+                            <div class="${labelClass}">${day.dayName}</div>
+                        </div>
+                    `;
+                    hoursHTML += `
+                        <div class="day-hours">
+                            <span class="killing-hr">${formatHours(killingMs)}</span>
+                            <span class="work-hr">${formatHours(workMs)}</span>
+                        </div>
+                    `;
+                }
+            });
+            
+            weeklyChartEl.innerHTML = chartHTML;
+            weeklyHoursEl.innerHTML = hoursHTML;
+        }
+
+        function updateDisplay(type) {
+            const timer = timers[type];
+            const els = elements[type];
             const todayData = getTodayData();
+            const typeData = todayData[type];
             
-            if (isRunning) {
-                currentSessionElapsed = Date.now() - startTime;
+            if (timer.isRunning) {
+                timer.currentSessionElapsed = Date.now() - timer.startTime;
             }
             
-            currentTimeEl.textContent = formatTime(currentSessionElapsed);
-            totalTimeEl.textContent = formatTime(todayData.totalMs + (isRunning ? currentSessionElapsed : 0));
+            els.currentTime.textContent = formatTime(timer.currentSessionElapsed);
+            els.totalTime.textContent = formatTime(typeData.totalMs + (timer.isRunning ? timer.currentSessionElapsed : 0));
             
-            if (todayData.sessions > 0 || isRunning) {
-                const count = todayData.sessions + (isRunning ? 1 : 0);
-                sessionCountEl.textContent = `${count} session${count > 1 ? 's' : ''}`;
+            const runningSession = timer.isRunning ? 1 : 0;
+            const totalSessions = typeData.sessions + runningSession;
+            if (totalSessions > 0) {
+                els.sessionCount.textContent = `${totalSessions} session${totalSessions > 1 ? 's' : ''}`;
             } else {
-                sessionCountEl.textContent = '';
+                els.sessionCount.textContent = '';
             }
+
+            updateSummary();
+            renderWeeklyChart();
         }
 
-        function startTimer() {
-            isRunning = true;
-            startTime = Date.now();
-            currentSessionElapsed = 0;
+        function updateSummary() {
+            const todayData = getTodayData();
+            let total = todayData.killing.totalMs + todayData.work.totalMs;
             
-            toggleBtn.textContent = 'Stop';
-            toggleBtn.classList.add('running');
-            currentTimeEl.classList.add('running');
+            if (timers.killing.isRunning) {
+                total += timers.killing.currentSessionElapsed;
+            }
+            if (timers.work.isRunning) {
+                total += timers.work.currentSessionElapsed;
+            }
             
-            timerInterval = setInterval(updateDisplay, 100);
+            summaryTimeEl.textContent = formatTime(total);
         }
 
-        function stopTimer() {
-            isRunning = false;
-            clearInterval(timerInterval);
+        function startTimer(type) {
+            const timer = timers[type];
+            const els = elements[type];
+            
+            timer.isRunning = true;
+            timer.startTime = Date.now();
+            timer.currentSessionElapsed = 0;
+            
+            els.toggleBtn.textContent = 'Stop';
+            els.toggleBtn.classList.add('running');
+            els.currentTime.classList.add(`running-${type}`);
+            
+            timer.interval = setInterval(() => updateDisplay(type), 100);
+        }
+
+        function stopTimer(type) {
+            const timer = timers[type];
+            const els = elements[type];
+            
+            timer.isRunning = false;
+            clearInterval(timer.interval);
             
             const todayData = getTodayData();
-            const newTotal = todayData.totalMs + currentSessionElapsed;
-            const newSessions = todayData.sessions + 1;
-            updateTodayData(newTotal, newSessions);
+            const typeData = todayData[type];
+            const newTotal = typeData.totalMs + timer.currentSessionElapsed;
+            const newSessions = typeData.sessions + 1;
+            updateTodayData(type, newTotal, newSessions);
             
-            currentSessionElapsed = 0;
-            startTime = null;
+            timer.currentSessionElapsed = 0;
+            timer.startTime = null;
             
-            toggleBtn.textContent = 'Start';
-            toggleBtn.classList.remove('running');
-            currentTimeEl.classList.remove('running');
+            els.toggleBtn.textContent = 'Start';
+            els.toggleBtn.classList.remove('running');
+            els.currentTime.classList.remove(`running-${type}`);
             
-            updateDisplay();
+            updateDisplay(type);
         }
 
-        function resetToday() {
-            if (isRunning) {
-                stopTimer();
-            }
-            updateTodayData(0, 0);
-            currentSessionElapsed = 0;
-            currentTimeEl.textContent = '00:00:00';
-            updateDisplay();
+        function resetAll() {
+            ['killing', 'work'].forEach(type => {
+                const timer = timers[type];
+                const els = elements[type];
+                
+                if (timer.isRunning) {
+                    timer.isRunning = false;
+                    clearInterval(timer.interval);
+                    els.toggleBtn.textContent = 'Start';
+                    els.toggleBtn.classList.remove('running');
+                    els.currentTime.classList.remove(`running-${type}`);
+                }
+                
+                timer.currentSessionElapsed = 0;
+                timer.startTime = null;
+                
+                updateTodayData(type, 0, 0);
+                els.currentTime.textContent = '00:00:00';
+                updateDisplay(type);
+            });
         }
 
-        toggleBtn.addEventListener('click', () => {
-            if (isRunning) {
-                stopTimer();
+        elements.killing.toggleBtn.addEventListener('click', () => {
+            if (timers.killing.isRunning) {
+                stopTimer('killing');
             } else {
-                startTimer();
+                startTimer('killing');
+            }
+        });
+
+        elements.work.toggleBtn.addEventListener('click', () => {
+            if (timers.work.isRunning) {
+                stopTimer('work');
+            } else {
+                startTimer('work');
             }
         });
 
         resetBtn.addEventListener('click', () => {
-            if (confirm('Reset today\'s record?')) {
-                resetToday();
+            if (confirm('Reset all records for today?')) {
+                resetAll();
             }
         });
 
         // Initialize
         currentDateEl.textContent = formatDisplayDate();
-        updateDisplay();
+        renderWeeklyChart();
+        updateDisplay('killing');
+        updateDisplay('work');
 
         // Check for day change
         setInterval(() => {
             const newDate = formatDisplayDate();
             if (currentDateEl.textContent !== newDate) {
                 currentDateEl.textContent = newDate;
-                if (!isRunning) {
-                    updateDisplay();
+                renderWeeklyChart();
+                if (!timers.killing.isRunning && !timers.work.isRunning) {
+                    updateDisplay('killing');
+                    updateDisplay('work');
                 }
             }
         }, 60000);
 
         // Register Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
+            navigator.serviceWorker.register('./sw.js')
                 .then(() => console.log('SW registered'))
                 .catch(err => console.log('SW registration failed:', err));
         }
