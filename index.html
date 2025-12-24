@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>TimeLog</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --border: #2a2a2a;
+            --text: #e0e0e0;
+            --text-dim: #666;
+            --accent: #00d4aa;
+            --accent-glow: rgba(0, 212, 170, 0.15);
+            --danger: #ff6b6b;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 48px;
+        }
+
+        .date {
+            font-size: 13px;
+            font-weight: 300;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .timer-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .current-time {
+            font-size: 48px;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+            transition: color 0.3s ease;
+        }
+
+        .current-time.running {
+            color: var(--accent);
+        }
+
+        .toggle-btn {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toggle-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--accent-glow);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .toggle-btn:hover {
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+
+        .toggle-btn:hover::before {
+            opacity: 1;
+        }
+
+        .toggle-btn:active {
+            transform: scale(0.98);
+        }
+
+        .toggle-btn.running {
+            border-color: var(--accent);
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+
+        .toggle-btn.running::before {
+            opacity: 1;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        }
+
+        .total-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .total-label {
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--text-dim);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .total-time {
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .reset-btn {
+            margin-top: 8px;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--text-dim);
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .reset-btn:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .session-count {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="date" id="currentDate"></div>
+        
+        <div class="timer-section">
+            <div class="current-time" id="currentTime">00:00:00</div>
+            <button class="toggle-btn" id="toggleBtn">Start</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="total-section">
+            <div class="total-label">Total Today</div>
+            <div class="total-time" id="totalTime">00:00:00</div>
+            <div class="session-count" id="sessionCount"></div>
+            <button class="reset-btn" id="resetBtn">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'timelog_data';
+        
+        let isRunning = false;
+        let startTime = null;
+        let currentSessionElapsed = 0;
+        let timerInterval = null;
+
+        const currentTimeEl = document.getElementById('currentTime');
+        const totalTimeEl = document.getElementById('totalTime');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const currentDateEl = document.getElementById('currentDate');
+        const sessionCountEl = document.getElementById('sessionCount');
+
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function getTodayKey() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        }
+
+        function formatDisplayDate() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'short', day: 'numeric', weekday: 'short' };
+            return now.toLocaleDateString('ja-JP', options);
+        }
+
+        function loadData() {
+            const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            const todayKey = getTodayKey();
+            
+            if (!data[todayKey]) {
+                data[todayKey] = { totalMs: 0, sessions: 0 };
+            }
+            
+            return data;
+        }
+
+        function saveData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        function getTodayData() {
+            const data = loadData();
+            return data[getTodayKey()];
+        }
+
+        function updateTodayData(totalMs, sessions) {
+            const data = loadData();
+            const todayKey = getTodayKey();
+            data[todayKey] = { totalMs, sessions };
+            saveData(data);
+        }
+
+        function updateDisplay() {
+            const todayData = getTodayData();
+            
+            if (isRunning) {
+                currentSessionElapsed = Date.now() - startTime;
+            }
+            
+            currentTimeEl.textContent = formatTime(currentSessionElapsed);
+            totalTimeEl.textContent = formatTime(todayData.totalMs + (isRunning ? currentSessionElapsed : 0));
+            
+            if (todayData.sessions > 0 || isRunning) {
+                const count = todayData.sessions + (isRunning ? 1 : 0);
+                sessionCountEl.textContent = `${count} session${count > 1 ? 's' : ''}`;
+            } else {
+                sessionCountEl.textContent = '';
+            }
+        }
+
+        function startTimer() {
+            isRunning = true;
+            startTime = Date.now();
+            currentSessionElapsed = 0;
+            
+            toggleBtn.textContent = 'Stop';
+            toggleBtn.classList.add('running');
+            currentTimeEl.classList.add('running');
+            
+            timerInterval = setInterval(updateDisplay, 100);
+        }
+
+        function stopTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            
+            const todayData = getTodayData();
+            const newTotal = todayData.totalMs + currentSessionElapsed;
+            const newSessions = todayData.sessions + 1;
+            updateTodayData(newTotal, newSessions);
+            
+            currentSessionElapsed = 0;
+            startTime = null;
+            
+            toggleBtn.textContent = 'Start';
+            toggleBtn.classList.remove('running');
+            currentTimeEl.classList.remove('running');
+            
+            updateDisplay();
+        }
+
+        function resetToday() {
+            if (isRunning) {
+                stopTimer();
+            }
+            updateTodayData(0, 0);
+            currentSessionElapsed = 0;
+            currentTimeEl.textContent = '00:00:00';
+            updateDisplay();
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (isRunning) {
+                stopTimer();
+            } else {
+                startTimer();
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            if (confirm('Reset today\'s record?')) {
+                resetToday();
+            }
+        });
+
+        // Initialize
+        currentDateEl.textContent = formatDisplayDate();
+        updateDisplay();
+
+        // Check for day change
+        setInterval(() => {
+            const newDate = formatDisplayDate();
+            if (currentDateEl.textContent !== newDate) {
+                currentDateEl.textContent = newDate;
+                if (!isRunning) {
+                    updateDisplay();
+                }
+            }
+        }, 60000);
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('SW registered'))
+                .catch(err => console.log('SW registration failed:', err));
+        }
+    </script>
+</body>
+</html>
